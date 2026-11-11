@@ -1,6 +1,8 @@
 import pytest
 from times import time_range
 from times import compute_overlap_time
+import yaml
+
 
 def test_time_range():
     with pytest.raises(ValueError):
@@ -14,5 +16,40 @@ def test_compute_overlap_time():
 
     assert real == expected
 
+@pytest.mark.parametrize(
+    "range1, range2, expected",
+    [
+        (
+            time_range("2010-01-12 10:00:00", "2010-01-12 12:00:00"), # Range 1
+            time_range("2010-01-12 10:30:00", "2010-01-12 10:45:00", 2, 60), # range 2
+            [("2010-01-12 10:30:00", "2010-01-12 10:37:00"),
+             ("2010-01-12 10:38:00", "2010-01-12 10:45:00")], # What we expect the overlap time to be
+        ),
+        (
+            time_range("2010-01-12 10:00:00", "2010-01-12 11:00:00"), # Again
+            time_range("2010-01-12 12:00:00", "2010-01-12 13:00:00"),
+            [],
+        ),
+    ],
+    ids=["generic", "no_overlap"],
+)
+def test_overlap_time(range1, range2, expected):
+    assert compute_overlap_time(range1, range2) == expected
+
+    
+with open("fixture.yaml") as f:
+    fixture = yaml.safe_load(f)
+
+cases = []
+id = []
+for param in fixture:
+    for name, val in param.items():
+        cases.append((val["time_range_1"], val["time_range_2"], val["expected"]))
+        id.append(name)
+
+@pytest.mark.parametrize("range1, range2, expected", cases, ids=ids)
+def test_overlap_time(range1, range2, expected):
+    result = compute_overlap_time(time_range(*range1), time_range(*range2))
+    assert result == [tuple(e) for e in expected]
 
     
