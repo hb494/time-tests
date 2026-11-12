@@ -2,6 +2,8 @@ import pytest
 from times import time_range
 from times import compute_overlap_time
 import yaml
+from unittest.mock import Mock, patch
+import times
 
 
 def test_time_range():
@@ -47,9 +49,24 @@ for param in fixture:
         cases.append((val["time_range_1"], val["time_range_2"], val["expected"]))
         id.append(name)
 
-@pytest.mark.parametrize("range1, range2, expected", cases, ids=ids)
+@pytest.mark.parametrize("range1, range2, expected", cases, ids=id)
 def test_overlap_time(range1, range2, expected):
     result = compute_overlap_time(time_range(*range1), time_range(*range2))
     assert result == [tuple(e) for e in expected]
+
+# Mocking
+
+def test_iss_passes():
+    fake_response = Mock()
+    fake_response.json.return_value = {
+        "info": {"satid": 25544, "satname": "SPACE STATION", "transactionscount": 1, "passescount": 1},
+        "passes": [{"startUTC": 1521368025, "endUTC": 1521368660}],
+    }
+
+    with patch.object(times.requests, "get", return_value=fake_response) as mock_get:
+        result = times.iss_passes()
+
+    mock_get.assert_called_once()
+    assert result == [("2018-03-18 10:13:45", "2018-03-18 10:24:20")]
 
     

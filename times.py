@@ -1,4 +1,8 @@
 import datetime
+import dotenv
+import os
+import requests
+from unittest.mock import Mock, patch
 
 
 def time_range(start_time, end_time, number_of_intervals=1, gap_between_intervals_s=0):
@@ -28,3 +32,24 @@ if __name__ == "__main__":
     large = time_range("2010-01-12 10:00:00", "2010-01-12 12:00:00")
     short = time_range("2010-01-12 10:30:00", "2010-01-12 10:45:00", 2, 60)
     print(compute_overlap_time(large, short))
+
+dotenv.load_dotenv()
+API_KEY = os.getenv("N2YO_API_KEY")
+
+def iss_passes():
+    response = requests.get(
+        url = f"https://api.n2yo.com/rest/v1/satellite/visualpasses/25544/56/0/0/5/50&apiKey={API_KEY}",
+    )
+    data = response.json()
+    passes = []
+    for p in data["passes"]:
+        start = datetime.datetime.fromtimestamp(p["startUTC"], tz=datetime.timezone.utc)
+        end = datetime.datetime.fromtimestamp(p["endUTC"], tz=datetime.timezone.utc)
+        passes.append((start.strftime("%Y-%m-%d %H:%M:%S"), end.strftime("%Y-%m-%d %H:%M:%S")))
+    return passes
+
+# Mocking
+
+def test_iss_passes():
+    with patch.object(requests, 'get') as mock_get:
+        s
